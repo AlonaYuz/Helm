@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 5  # Number of pods
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-app-container
+        image: nginx:latest  # Replace with your desired image
+        ports:
+        - containerPort: 80
+        resources:
+          requests:          # Minimal resource requests
+            memory: "64Mi"
+            cpu: "50m"
+          limits:            # Minimal resource limits
+            memory: "128Mi"
+            cpu: "100m"
