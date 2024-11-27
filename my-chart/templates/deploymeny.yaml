@@ -1,28 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app
+  name: "{{ .Values.name }}"
   labels:
-    app: my-app
+    app: "{{ .Values.name }}"
 spec:
-  replicas: 5  # Number of pods
   selector:
     matchLabels:
-      app: my-app
+      app: "{{ .Values.name }}"
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
-        app: my-app
+        app: "{{ .Values.name }}"
     spec:
       containers:
-      - name: my-app-container
-        image: nginx:latest  # Replace with your desired image
+      - name: "{{ .Values.name }}"
+        image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
+        imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 5000
+        {{- if .Values.deployment.resources }}
         resources:
-          requests:          # Minimal resource requests
-            memory: "64Mi"
-            cpu: "50m"
-          limits:            # Minimal resource limits
-            memory: "128Mi"
-            cpu: "100m"
+          {{- if .Values.deployment.resources.requests }}
+          requests:
+            memory: {{ .Values.deployment.resources.requests.memory | default "50Mi" | quote }}
+            cpu: {{ .Values.deployment.resources.requests.cpu | default "10m" | quote }}
+          {{- else}}
+          requests:
+            memory: "50Mi"
+            cpu: "10m"
+          {{- end}}
+          {{- if .Values.deployment.resources.limits }}
+          limits:
+            memory: {{ .Values.deployment.resources.limits.memory | default "1024Mi" | quote }}
+            cpu: {{ .Values.deployment.resources.limits.cpu | default "1" | quote }}
+          {{- else}}  
+          limits:
+            memory: "1024Mi"
+            cpu: "1"
+          {{- end }}
+        {{- else }}
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "10m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1"
+        {{- end}} 
